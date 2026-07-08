@@ -1,0 +1,13 @@
+{
+  "name": "idea-to-thumbnails",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}

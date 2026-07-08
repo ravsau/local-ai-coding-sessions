@@ -1,0 +1,6 @@
+node_modules/
+generated_images/
+data/
+*.db
+*.sqlite
+.DS_Store

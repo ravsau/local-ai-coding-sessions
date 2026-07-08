@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Idea → Titles + Thumbnails</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f; color: #eee; min-height: 100vh; padding: 40px 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 32px; }
+
+    .input-area {
+      display: flex; gap: 12px; margin-bottom: 40px;
+    }
+    .input-area textarea {
+      flex: 1; padding: 16px; font-size: 1rem; border-radius: 12px;
+      border: 1px solid #333; background: #1a1a1a; color: #eee;
+      resize: vertical; min-height: 60px; font-family: inherit;
+    }
+    .input-area textarea:focus { outline: none; border-color: #555; }
+    .input-area button {
+      padding: 16px 32px; font-size: 1rem; font-weight: 600;
+      border: none; border-radius: 12px; background: #e60012;
+      color: #fff; cursor: pointer; transition: background .2s;
+      white-space: nowrap;
+    }
+    .input-area button:hover { background: #ff1a1a; }
+    .input-area button:disabled { background: #555; cursor: not-allowed; }
+
+    .status { padding: 12px; margin-bottom: 24px; border-radius: 8px; display: none; }
+    .status.loading { display: block; background: #1a1a1a; border: 1px solid #333; }
+    .status.error { display: block; background: #2a1515; border: 1px solid #e60012; color: #e60012; }
+
+    .section-title { font-size: 1.2rem; font-weight: 600; margin: 32px 0 16px; }
+
+    .title-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px; margin-bottom: 40px;
+    }
+    .title-card {
+      background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
+      padding: 16px; cursor: pointer; transition: border-color .2s;
+    }
+    .title-card:hover { border-color: #555; }
+    .title-card.selected { border-color: #e60012; }
+    .title-card .title-text { font-size: .95rem; margin-bottom: 8px; line-height: 1.4; }
+    .title-card .score {
+      font-size: .8rem; color: #888;
+    }
+    .title-card .score.high { color: #4CAF50; }
+    .title-card .score.med { color: #FF9800; }
+
+    .thumb-area {
+      margin-top: 32px;
+    }
+    .thumb-area .generate-btn {
+      padding: 12px 28px; font-size: 1rem; font-weight: 600;
+      border: none; border-radius: 12px; background: #e60012;
+      color: #fff; cursor: pointer; transition: background .2s;
+    }
+    .thumb-area .generate-btn:hover { background: #ff1a1a; }
+    .thumb-area .generate-btn:disabled { background: #555; cursor: not-allowed; }
+
+    .thumb-result {
+      margin-top: 24px;
+    }
+    .thumb-result img {
+      max-width: 100%; border-radius: 12px; border: 1px solid #333;
+      aspect-ratio: 16/9; object-fit: cover;
+    }
+    .thumb-result .caption { margin-top: 8px; font-size: .85rem; color: #888; }
+
+    .empty { text-align: center; padding: 60px; color: #555; font-size: .95rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Idea → Titles + Thumbnails</h1>
+    <p class="subtitle">Drop in a draft idea. Get 9 YouTube titles. Pick one → generate a thumbnail. All local, powered by Codex CLI.</p>
+
+    <div class="input-area">
+      <textarea id="draft-input" placeholder="Paste your video idea here...&#10;e.g. "A beginner-friendly guide to building a SaaS from scratch""></textarea>
+      <button id="generate-titles-btn" onclick="generateTitles()">Generate Titles</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div id="titles-section">
+      <div class="section-title" id="titles-heading" style="display:none">📝 Generated Titles — click one to generate a thumbnail</div>
+      <div class="title-grid" id="title-list"></div>
+    </div>
+
+    <div class="thumb-area" id="thumb-area" style="display:none">
+      <button class="generate-btn" id="gen-thumb-btn" onclick="generateThumbnail()">Generate Thumbnail</button>
+      <div class="thumb-result" id="thumb-result">
+        <img id="thumb-img" src="" alt="Thumbnail" />
+        <div class="caption" id="thumb-caption"></div>
+      </div>
+    </div>
+
+    <div class="empty" id="empty-state">
+      Submit an idea above to generate titles and thumbnails.
+    </div>
+  </div>
+
+  <script>
+    let currentIdeaId = null;
+    let selectedTitleId = null;
+    let selectedTitleText = '';
+    let pollInterval = null;
+
+    async function generateTitles() {
+      const draft = document.getElementById('draft-input').value.trim();
+      if (!draft) return;
+
+      const btn = document.getElementById('generate-titles-btn');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      const status = document.getElementById('status');
+      status.className = 'status loading';
+      status.textContent = '⏳ Creating idea entry...';
+
+      try {
+        const createRes = await fetch('/api/ideas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ draft }),
+        });
+        const idea = await createRes.json();
+        currentIdeaId = idea.id;
+
+        status.textContent = '⏳ Generating titles... (this may take a minute)';
+
+        fetch(`/api/ideas/${idea.id}/generate`, { method: 'POST' });
+
+        pollInterval = setInterval(() => pollTitles(idea.id), 2000);
+      } catch (err) {
+        status.className = 'status error';
+        status.textContent = '❌ Error: ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'Generate Titles';
+      }
+    }
+
+    async function pollTitles(ideaId) {
+      try {
+        const res = await fetch(`/api/ideas/${ideaId}`);
+        const idea = await res.json();
+
+        if (idea.titles && idea.titles.length > 0) {
+          renderTitles(idea.titles);
+          clearInterval(pollInterval);
+          pollInterval = null;
+          const status = document.getElementById('status');
+          status.className = 'status loading';
+          status.textContent = `✅ ${idea.titles.length} titles generated. Click one to generate a thumbnail.`;
+          document.getElementById('generate-titles-btn').disabled = false;
+          document.getElementById('generate-titles-btn').textContent = 'Generate Titles';
+        }
+      } catch (err) {
+        // still generating
+      }
+    }
+
+    function renderTitles(titles) {
+      const container = document.getElementById('title-list');
+      const heading = document.getElementById('titles-heading');
+      heading.style.display = 'block';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('thumb-area').style.display = 'none';
+
+      container.innerHTML = titles.map(t => {
+        const scoreClass = t.score >= 80 ? 'high' : t.score >= 60 ? 'med' : '';
+        return `<div class="title-card ${selectedTitleId === t.id ? 'selected' : ''}" 
+                  onclick="selectTitle(${t.id}, '${escapeHtml(t.title)}')"
+                  data-id="${t.id}">
+          <div class="title-text">${escapeHtml(t.title)}</div>
+          <div class="score ${scoreClass}">Score: ${t.score}/100</div>
+        </div>`;
+      }).join('');
+    }
+
+    function selectTitle(id, title) {
+      selectedTitleId = id;
+      selectedTitleText = title;
+      document.querySelectorAll('.title-card').forEach(c => c.classList.remove('selected'));
+      document.querySelector(`.title-card[data-id="${id}"]`)?.classList.add('selected');
+      document.getElementById('thumb-area').style.display = 'block';
+      document.getElementById('gen-thumb-btn').disabled = false;
+      document.getElementById('thumb-img').src = '';
+      document.getElementById('thumb-caption').textContent = '';
+    }
+
+    async function generateThumbnail() {
+      if (!selectedTitleId) return;
+
+      const btn = document.getElementById('gen-thumb-btn');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      const status = document.getElementById('status');
+      status.className = 'status loading';
+      status.textContent = '⏳ Generating thumbnail... (may take a minute)';
+
+      try {
+        const res = await fetch(`/api/ideas/${currentIdeaId}/thumbnail/${selectedTitleId}`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+
+        if (data.imagePath) {
+          const imgEl = document.getElementById('thumb-img');
+          imgEl.src = `/api/thumbnails/${data.id}/image?t=${Date.now()}`;
+          document.getElementById('thumb-caption').textContent = `Thumbnail for: ${selectedTitleText}`;
+          document.getElementById('thumb-area').style.display = 'block';
+        }
+
+        status.className = 'status loading';
+        status.textContent = '✅ Thumbnail generated!';
+      } catch (err) {
+        status.className = 'status error';
+        status.textContent = '❌ Error: ' + err.message;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Generate Thumbnail';
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
+    }
+  </script>
+</body>
+</html>
