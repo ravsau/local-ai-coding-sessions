@@ -73,6 +73,7 @@
       max-width: 100%; border-radius: 12px; border: 1px solid #333;
       aspect-ratio: 16/9; object-fit: cover;
     }
+    .thumb-result img.hidden { display: none; }
     .thumb-result .caption { margin-top: 8px; font-size: .85rem; color: #888; }
 
     .empty { text-align: center; padding: 60px; color: #555; font-size: .95rem; }
@@ -84,7 +85,7 @@
     <p class="subtitle">Drop in a draft idea. Get 9 YouTube titles. Pick one → generate a thumbnail. All local, powered by Codex CLI.</p>
 
     <div class="input-area">
-      <textarea id="draft-input" placeholder="Paste your video idea here...&#10;e.g. "A beginner-friendly guide to building a SaaS from scratch""></textarea>
+      <textarea id="draft-input" placeholder='Paste your video idea here...&#10;e.g. "A beginner-friendly guide to building a SaaS from scratch"'></textarea>
       <button id="generate-titles-btn" onclick="generateTitles()">Generate Titles</button>
     </div>
 
@@ -98,7 +99,7 @@
     <div class="thumb-area" id="thumb-area" style="display:none">
       <button class="generate-btn" id="gen-thumb-btn" onclick="generateThumbnail()">Generate Thumbnail</button>
       <div class="thumb-result" id="thumb-result">
-        <img id="thumb-img" src="" alt="Thumbnail" />
+        <img id="thumb-img" class="hidden" src="" alt="Thumbnail" />
         <div class="caption" id="thumb-caption"></div>
       </div>
     </div>
@@ -110,6 +111,7 @@
 
   <script>
     let currentIdeaId = null;
+    let selectedIdeaId = null;
     let selectedTitleId = null;
     let selectedTitleText = '';
     let pollInterval = null;
@@ -132,12 +134,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ draft }),
         });
+        if (!createRes.ok) throw new Error('Create idea failed: ' + createRes.status);
         const idea = await createRes.json();
         currentIdeaId = idea.id;
 
         status.textContent = '⏳ Generating titles... (this may take a minute)';
 
-        fetch(`/api/ideas/${idea.id}/generate`, { method: 'POST' });
+        // Fire title generation (async, server processes in background)
+        const genRes = await fetch(`/api/ideas/${idea.id}/generate`, { method: 'POST' });
+        if (!genRes.ok) throw new Error('Generation trigger failed: ' + genRes.status);
 
         pollInterval = setInterval(() => pollTitles(idea.id), 2000);
       } catch (err) {
@@ -151,10 +156,11 @@
     async function pollTitles(ideaId) {
       try {
         const res = await fetch(`/api/ideas/${ideaId}`);
+        if (!res.ok) return; // idea may not exist yet
         const idea = await res.json();
 
         if (idea.titles && idea.titles.length > 0) {
-          renderTitles(idea.titles);
+          renderTitles(ideaId, idea.titles);
           clearInterval(pollInterval);
           pollInterval = null;
           const status = document.getElementById('status');
@@ -164,41 +170,69 @@
           document.getElementById('generate-titles-btn').textContent = 'Generate Titles';
         }
       } catch (err) {
-        // still generating
+        // still generating — ignore poll errors
       }
     }
 
-    function renderTitles(titles) {
+    function renderTitles(ideaId, titles) {
       const container = document.getElementById('title-list');
       const heading = document.getElementById('titles-heading');
       heading.style.display = 'block';
       document.getElementById('empty-state').style.display = 'none';
       document.getElementById('thumb-area').style.display = 'none';
+      hideThumbnail();
 
       container.innerHTML = titles.map(t => {
         const scoreClass = t.score >= 80 ? 'high' : t.score >= 60 ? 'med' : '';
-        return `<div class="title-card ${selectedTitleId === t.id ? 'selected' : ''}" 
-                  onclick="selectTitle(${t.id}, '${escapeHtml(t.title)}')"
-                  data-id="${t.id}">
+        return `<div class="title-card" 
+                  onclick="selectTitle(${ideaId}, ${t.id}, '${escapeHtml(t.title)}')"
+                  data-idea="${ideaId}" data-id="${t.id}">
           <div class="title-text">${escapeHtml(t.title)}</div>
           <div class="score ${scoreClass}">Score: ${t.score}/100</div>
         </div>`;
       }).join('');
     }
 
-    function selectTitle(id, title) {
-      selectedTitleId = id;
+    function selectTitle(ideaId, titleId, title) {
+      selectedIdeaId = ideaId;
+      selectedTitleId = titleId;
       selectedTitleText = title;
       document.querySelectorAll('.title-card').forEach(c => c.classList.remove('selected'));
-      document.querySelector(`.title-card[data-id="${id}"]`)?.classList.add('selected');
+      document.querySelector(`.title-card[data-id="${titleId}"]`)?.classList.add('selected');
       document.getElementById('thumb-area').style.display = 'block';
       document.getElementById('gen-thumb-btn').disabled = false;
-      document.getElementById('thumb-img').src = '';
+      hideThumbnail();
+    }
+
+    function hideThumbnail() {
+      const img = document.getElementById('thumb-img');
+      img.classList.add('hidden');
+      img.src = '';
       document.getElementById('thumb-caption').textContent = '';
     }
 
+    function showThumbnail(url, caption) {
+      const img = document.getElementById('thumb-img');
+      img.src = url;
+      img.classList.remove('hidden');
+      document.getElementById('thumb-caption').textContent = caption;
+      img.onload = () => { img.classList.remove('hidden'); };
+      img.onerror = () => {
+        img.classList.add('hidden');
+        const status = document.getElementById('status');
+        status.className = 'status error';
+        status.textContent = '❌ Image failed to load — check server logs';
+      };
+    }
+
     async function generateThumbnail() {
-      if (!selectedTitleId) return;
+      // Guard: ensure both IDs are set
+      if (!selectedIdeaId || !selectedTitleId) {
+        const status = document.getElementById('status');
+        status.className = 'status error';
+        status.textContent = '❌ Select a title first (missing idea or title ID)';
+        return;
+      }
 
       const btn = document.getElementById('gen-thumb-btn');
       btn.disabled = true;
@@ -209,20 +243,26 @@
       status.textContent = '⏳ Generating thumbnail... (may take a minute)';
 
       try {
-        const res = await fetch(`/api/ideas/${currentIdeaId}/thumbnail/${selectedTitleId}`, {
+        const res = await fetch(`/api/ideas/${selectedIdeaId}/thumbnail/${selectedTitleId}`, {
           method: 'POST',
         });
+
+        if (!res.ok) {
+          let msg = 'Server returned ' + res.status;
+          try { const e = await res.json(); msg = e.details || e.error || msg; } catch {}
+          throw new Error(msg);
+        }
+
         const data = await res.json();
 
         if (data.imagePath) {
-          const imgEl = document.getElementById('thumb-img');
-          imgEl.src = `/api/thumbnails/${data.id}/image?t=${Date.now()}`;
-          document.getElementById('thumb-caption').textContent = `Thumbnail for: ${selectedTitleText}`;
-          document.getElementById('thumb-area').style.display = 'block';
+          showThumbnail(`/api/thumbnails/${data.id}/image?t=${Date.now()}`, `Thumbnail for: ${selectedTitleText}`);
+          status.className = 'status loading';
+          status.textContent = '✅ Thumbnail generated!';
+        } else {
+          status.className = 'status error';
+          status.textContent = '❌ Server returned unexpected response (no imagePath)';
         }
-
-        status.className = 'status loading';
-        status.textContent = '✅ Thumbnail generated!';
       } catch (err) {
         status.className = 'status error';
         status.textContent = '❌ Error: ' + err.message;

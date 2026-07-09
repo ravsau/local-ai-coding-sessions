@@ -118,6 +118,18 @@ app.get('/api/thumbnails/:id/image', (req, res) => {
   res.status(404).json({ error: 'thumbnail not found' });
 });
 
+// ── process-level safety ──────────────────────────────────────────
+
+process.on('uncaughtException', (err) => {
+  console.error('🔥 Uncaught exception:', err.message);
+  console.error(err.stack);
+  // Don't exit — let the server try to recover
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('🔥 Unhandled rejection:', reason);
+});
+
 // ── start server ─────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;

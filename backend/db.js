@@ -9,16 +9,27 @@ const DB_PATH = join(DATA_DIR, 'store.json');
 if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
 
 function readStore() {
-  if (!existsSync(DB_PATH)) return { ideas: [], nextId: 1 };
+  if (!existsSync(DB_PATH)) return { ideas: [], nextId: 1, seq: 1000000 };
   try {
     return JSON.parse(readFileSync(DB_PATH, 'utf-8'));
   } catch {
-    return { ideas: [], nextId: 1 };
+    return { ideas: [], nextId: 1, seq: 1000000 };
   }
 }
 
 function writeStore(store) {
   writeFileSync(DB_PATH, JSON.stringify(store, null, 2));
+}
+
+let _seqCounter = null;
+function nextSeq() {
+  // Use in-memory counter to avoid Date.now() collisions
+  const store = readStore();
+  if (_seqCounter === null) _seqCounter = store.seq || 1000000;
+  _seqCounter++;
+  store.seq = _seqCounter;
+  writeStore(store);
+  return _seqCounter;
 }
 
 export function createIdea(draft) {
@@ -39,7 +50,7 @@ export function addTitle(ideaId, title, score) {
   const store = readStore();
   const idea = store.ideas.find(i => i.id === ideaId);
   if (!idea) return null;
-  const titleObj = { id: Date.now(), title, score, createdAt: new Date().toISOString() };
+  const titleObj = { id: nextSeq(), title, score, createdAt: new Date().toISOString() };
   idea.titles.push(titleObj);
   writeStore(store);
   return titleObj;
@@ -49,7 +60,7 @@ export function addThumbnail(ideaId, titleId, imagePath, prompt, style) {
   const store = readStore();
   const idea = store.ideas.find(i => i.id === ideaId);
   if (!idea) return null;
-  const thumb = { id: Date.now(), titleId, imagePath, prompt, style, createdAt: new Date().toISOString() };
+  const thumb = { id: nextSeq(), titleId, imagePath, prompt, style, createdAt: new Date().toISOString() };
   idea.thumbnails.push(thumb);
   writeStore(store);
   return thumb;
