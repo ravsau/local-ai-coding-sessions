@@ -1,4 +1,3 @@
-# runtime / regenerable — applies to every session folder
 node_modules/
 generated_images/
 data/

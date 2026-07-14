@@ -1,31 +1,16 @@
-# DeepSeek Local Full Stack
+# Local AI Coding Sessions
 
-A small local-first full-stack app built during a CloudYeti recording experiment: coding on a 128GB Mac with a local LLM.
+Full-stack apps built **entirely by local LLMs** on a 128GB Mac — no cloud model, no ChatGPT/Claude rescue — recorded uncut for CloudYeti. Each folder is one session: the same task ("build a video title + thumbnail generator") given to a different local model, so you can compare what actually happens.
 
-The app takes a draft video idea, generates title options with the Codex CLI, and can generate thumbnail image variants. It stores state locally and is intended for local development, not cloud deployment.
+| Session | Model | Harness | Recording |
+|---------|-------|---------|-----------|
+| [`deepseek-v4-flash/`](deepseek-v4-flash/) | DeepSeek V4 Flash (dwarfstar) | Pi | [What Local AI Coding Actually Feels Like on a 128GB Mac](https://youtu.be/hVpOxnESKVs) |
+| [`qwen-3.6-27b/`](qwen-3.6-27b/) | Qwen 3.6 27B Q6 (llama.cpp) | Pi | [Can Qwen 3.6 27B Replace Claude Code? Full Uncut Session](https://youtu.be/6NhLP_YGZVw) |
 
-## Stack
+Same task, same rig, different model — the point is the honest, uncut run: where it fails, how it recovers, and how fast it really is. Each folder has its own README with the exact prompt and setup.
 
-- Node.js + Express backend
-- Static HTML frontend
-- JSON file storage under `data/`
-- Codex CLI integration for title/image generation
+## Why local
 
-## Run locally
+No API keys in app code. Generation in these apps shells out to the local `codex` CLI; the models that *wrote* the code ran fully on-device via llama.cpp / Pi on a 128GB Mac.
 
-```bash
-npm install
-npm start
-```
-
-Open:
-
-```text
-http://localhost:3000
-```
-
-## Notes
-
-- `node_modules/`, `data/`, `generated_images/`, `.DS_Store`, and local database files are ignored.
-- Generated data and images are local artifacts and are not committed.
-- The Codex CLI must be installed and authenticated for generation features to work.
+— [CloudYeti](https://youtube.com/@CloudYeti) · [cloudyeti.io](https://cloudyeti.io)
