@@ -4,6 +4,8 @@
 
 A local-first full-stack app: enter a video idea, get 9 ranked title options, and generate a thumbnail for each — all generation runs locally through the `codex` CLI (no LLM/image API keys in app code).
 
+**See also:** [FAQ.md](FAQ.md) (viewer questions, answered) · [RESULTS.md](RESULTS.md) (measured tok/s, RAM, run log)
+
 ## Stack
 
 - Node.js + Express backend (`server/`)

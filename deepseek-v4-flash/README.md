@@ -6,6 +6,8 @@ A small local-first full-stack app built during a CloudYeti recording experiment
 
 The app takes a draft video idea, generates title options with the Codex CLI, and can generate thumbnail image variants. It stores state locally and is intended for local development, not cloud deployment.
 
+**See also:** [FAQ.md](FAQ.md) (viewer questions, answered) · [RESULTS.md](RESULTS.md) (measured tok/s, RAM, run log)
+
 ## Stack
 
 - Node.js + Express backend
