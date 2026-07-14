@@ -25,11 +25,9 @@ stays honest. `— (measure)` = not captured on this run.
 - Recovered without cloud help: partially
 - Cloud rescue needed: yes (one)
 
-**Notes for next time**
-- Put the context setting on screen (viewers flagged the 32k choice).
-- Lock the deliverable wording to match the series ("9 titles + score, one thumbnail per
-  title") — this run drifted toward "9 thumbnail variations."
-- Capture tok/s + prefill + peak RAM this time so the table isn't blank.
+**Observations**
+- Context processing (prefill) is the slow part on Apple/edge hardware and gets slower as the
+  window fills — the main thing to watch if you reproduce this on a smaller rig.
 
 ---
 

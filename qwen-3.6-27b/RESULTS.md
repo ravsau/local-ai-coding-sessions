@@ -28,10 +28,9 @@ stays honest. `— (measure)` = not captured on this run.
 - Recovered without cloud help: yes
 - Cloud rescue needed: no
 
-**Notes for next time**
-- Overlay the context setting + live tok/s on screen.
-- Timeout hang ("stuck on generating") came from the frontend fetch timeout vs codex's
-  ~50s latency — left in as real debugging, not pre-solved.
+**Observations**
+- The "stuck on generating" hang came from the frontend fetch timeout being shorter than
+  codex's ~50s latency — worth accounting for if you reproduce this.
 
 ---
 

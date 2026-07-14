@@ -39,18 +39,11 @@ Same rig, same task. Numbers are what was actually observed on the runs — cell
 > better overall. The point of the table is to replace that *feeling* with measured numbers —
 > so treat blank cells as "not measured yet," not zero.
 
-## Recording checklist (for the next session in this series)
+## Feedback & contributions
 
-Before/while recording an uncut local run, put these **on screen** — every one is something
-viewers explicitly asked for in comments:
-
-- [ ] **Context length** visible (e.g. an overlay: `ctx: 100k`). Viewers call out when a big‑context model is run at a small setting.
-- [ ] **The exact prompt** on screen at the start (it's in [PROMPT.md](PROMPT.md) — same one every time).
-- [ ] **Live tok/s + model + quant** as a persistent badge.
-- [ ] **Activity Monitor / memory pressure** shown at least once during the heavy part of the run.
-- [ ] **Chapter marker** at the failure + recovery moment (that's the retention spike — make it findable).
-- [ ] Audio checked (mono/one‑sided is an easy regression — verify the input channel).
-- [ ] Log the run's numbers into this repo's `RESULTS.md` + the benchmark table above.
+Got a correction, a config that works better, or a model/agent you want tested on this same
+task? Open an issue or PR — see [CONTRIBUTING.md](CONTRIBUTING.md). This repo doubles as the
+support thread for the videos, so questions and fixes are welcome.
 
 ## Why local
 
