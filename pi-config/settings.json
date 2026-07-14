@@ -1,0 +1,5 @@
+{
+  "defaultModel": "qwen3.6-27b-q6k-mtp",
+  "defaultProvider": "llamacpp-qwen36-mtp",
+  "defaultThinkingLevel": "medium"
+}

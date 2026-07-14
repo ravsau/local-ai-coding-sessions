@@ -17,6 +17,13 @@ Every session uses the **same canonical prompt** so the runs are comparable — 
 
 …followed by the `codex exec` guidance (shell out to the local CLI, `--sandbox read-only` for text and `--sandbox workspace-write` + `$imagegen` for thumbnails, pass the prompt as a single argv element, gate image gen behind opt‑in, one call per request). See [PROMPT.md](PROMPT.md) for the exact block.
 
+## The setup (Pi harness + local servers)
+
+The exact Pi config used for these runs is in **[`pi-config/`](pi-config/)** — the provider
+`models.json`, `settings.json`, the llama.cpp launch script for Qwen, and notes on the MTP
+flags and the DeepSeek `ds4`/dwarfstar engine. Local coding agent, local model, no cloud,
+no MCP servers.
+
 ## Why local
 
 No API keys in app code. Generation in these apps shells out to the local `codex` CLI; the models that *wrote* the code ran fully on-device via llama.cpp / Pi on a 128GB Mac.
