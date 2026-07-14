@@ -9,6 +9,14 @@ Full-stack apps built **entirely by local LLMs** on a 128GB Mac — no cloud mod
 
 Same task, same rig, different model — the point is the honest, uncut run: where it fails, how it recovers, and how fast it really is. Each folder has its own README with the exact prompt and setup.
 
+## The standard task prompt
+
+Every session uses the **same canonical prompt** so the runs are comparable — full copy‑pasteable version in **[PROMPT.md](PROMPT.md)**:
+
+> build me a full stack app to generate titles for my video idea. Give me 9 titles and rank them with a score. and for each title I should be able to generate a thumbnail. but don't use any API for LLM or image gen. use codex exec.
+
+…followed by the `codex exec` guidance (shell out to the local CLI, `--sandbox read-only` for text and `--sandbox workspace-write` + `$imagegen` for thumbnails, pass the prompt as a single argv element, gate image gen behind opt‑in, one call per request). See [PROMPT.md](PROMPT.md) for the exact block.
+
 ## Why local
 
 No API keys in app code. Generation in these apps shells out to the local `codex` CLI; the models that *wrote* the code ran fully on-device via llama.cpp / Pi on a 128GB Mac.
