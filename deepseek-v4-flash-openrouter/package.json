@@ -1,0 +1,13 @@
+{
+  "name": "title-thumbnail-generator",
+  "version": "1.0.0",
+  "description": "Generate 9 ranked titles + thumbnails for any video idea — powered by codex exec (no external APIs)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
